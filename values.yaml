@@ -1,0 +1,99 @@
+# Minimal Airflow on Kubernetes - No Redis
+# Uses LocalExecutor + Official PostgreSQL image
+
+executor: "LocalExecutor"
+
+redis:
+  enabled: false
+
+# Use official PostgreSQL image instead of Bitnami
+postgresql:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: postgres
+    tag: "16-alpine"
+  auth:
+    username: airflow
+    password: airflow123
+    database: airflow
+  primary:
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    persistence:
+      enabled: true
+      size: 8Gi
+
+webserver:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  defaultUser:
+    enabled: true
+    username: admin
+    password: admin
+    email: admin@example.com
+    firstName: Admin
+    lastName: User
+    role: Admin
+  service:
+    type: NodePort
+
+scheduler:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+workers:
+  replicas: 0
+
+triggerer:
+  enabled: false
+
+flower:
+  enabled: false
+
+statsd:
+  enabled: false
+
+pgbouncer:
+  enabled: false
+
+dags:
+  persistence:
+    enabled: false
+  gitSync:
+    enabled: false
+
+logs:
+  persistence:
+    enabled: false
+
+config:
+  core:
+    dags_folder: /opt/airflow/dags
+    load_examples: 'false'
+    executor: LocalExecutor
+  webserver:
+    expose_config: 'true'
+    rbac: 'true'
+  scheduler:
+    catchup_by_default: 'false'
+  logging:
+    remote_logging: 'false'
+
