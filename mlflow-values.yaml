@@ -1,0 +1,45 @@
+# --- 1. ENABLE THE DATABASE SERVER ---
+# This creates the database pod (sub-chart)
+postgresql:
+  enabled: true
+  auth:
+    username: mlflow
+    password: mlflowpassword
+    database: mlflow
+  architecture: standalone
+  primary:
+    persistence:
+      enabled: true
+      size: 1Gi
+
+# --- 2. CONFIGURE MLFLOW TO USE IT ---
+backendStore:
+  # Run the migration script to create tables
+  databaseMigration: true
+  
+  postgres:
+    # IMPORTANT: Set this to FALSE to satisfy the schema validation.
+    # We will provide the connection details via extraEnvVars instead.
+    enabled: false 
+
+# --- 3. CONFIGURE ARTIFACTS (MinIO) ---
+artifactRoot:
+  s3:
+    enabled: true
+    bucket: "mlflow-artifacts" 
+    awsAccessKeyId: "minioadmin"
+    awsSecretAccessKey: "minioadmin"
+
+# --- 4. FORCE CONNECTION STRINGS ---
+extraEnvVars:
+  # This tells MLflow exactly where the internal database is.
+  # Format: postgresql://<user>:<password>@<service-name>:<port>/<db_name>
+  MLFLOW_BACKEND_STORE_URI: "postgresql://mlflow:mlflowpassword@mlflow-postgresql:5432/mlflow"
+  
+  # MinIO Connection
+  MLFLOW_S3_ENDPOINT_URL: "http://minio.minio.svc.cluster.local:9000"
+  MLFLOW_S3_IGNORE_TLS: "true"
+
+service:
+  type: ClusterIP
+  port: 5000
