@@ -1,0 +1,118 @@
+apiVersion: kubeflow.org/v1beta1
+kind: Experiment
+metadata:
+  name: electricity-forecast-hpo
+  namespace: kubeflow-user-example-com  # Change this line
+
+spec:
+  algorithm:
+    algorithmName: random
+  parallelTrialCount: 3
+  maxTrialCount: 12
+  maxFailedTrialCount: 3
+  objective:
+    type: minimize
+    goal: 0.01
+    objectiveMetricName: test_rmse
+    additionalMetricNames:
+      - test_mape
+      - val_loss
+  
+  parameters:
+    - name: hidden_size
+      parameterType: int
+      feasibleSpace:
+        min: "64"
+        max: "256"
+        step: "32"
+    
+    - name: num_layers
+      parameterType: int
+      feasibleSpace:
+        min: "1"
+        max: "4"
+    
+    - name: dropout
+      parameterType: double
+      feasibleSpace:
+        min: "0.1"
+        max: "0.5"
+        step: "0.1"
+    
+    - name: learning_rate
+      parameterType: double
+      feasibleSpace:
+        min: "0.0001"
+        max: "0.01"
+    
+    - name: batch_size
+      parameterType: categorical
+      feasibleSpace:
+        list:
+          - "16"
+          - "32"
+          - "64"
+  
+  trialTemplate:
+    primaryContainerName: training-container
+    trialParameters:
+      - name: hiddenSize
+        description: Number of hidden units
+        reference: hidden_size
+      - name: numLayers
+        description: Number of LSTM layers
+        reference: num_layers
+      - name: dropout
+        description: Dropout rate
+        reference: dropout
+      - name: learningRate
+        description: Learning rate
+        reference: learning_rate
+      - name: batchSize
+        description: Batch size
+        reference: batch_size
+    
+    trialSpec:
+      apiVersion: batch/v1
+      kind: Job
+      spec:
+        template:
+          metadata:
+            annotations:
+              sidecar.istio.io/inject: "false"
+          spec:
+            containers:
+              - name: training-container
+                image: python:3.10
+                command:
+                  - python
+                  - /app/train_katib.py
+                  - --hidden-size=${trialParameters.hiddenSize}
+                  - --num-layers=${trialParameters.numLayers}
+                  - --dropout=${trialParameters.dropout}
+                  - --learning-rate=${trialParameters.learningRate}
+                  - --batch-size=${trialParameters.batchSize}
+                env:
+                  - name: MINIO_ENDPOINT
+                    value: "minio.minio.svc.cluster.local:9000"
+                  - name: MINIO_ACCESS_KEY
+                    value: "minioadmin"
+                  - name: MINIO_SECRET_KEY
+                    value: "minioadmin"
+                  - name: BUCKET_NAME
+                    value: "electricity-data"
+                  - name: MLFLOW_TRACKING_URI
+                    value: "http://mlflow.mlflow.svc.cluster.local:5000"
+                  - name: EIA_API_KEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: eia-api-key
+                        key: EIA_API_KEY
+                volumeMounts:
+                  - name: training-script
+                    mountPath: /app
+            volumes:
+              - name: training-script
+                configMap:
+                  name: katib-training-script
+            restartPolicy: Never
