@@ -1,0 +1,70 @@
+# ============================================================
+# Airflow Helm Chart v1.18.0 - Clean Working Configuration
+# LocalExecutor + GitSync + Python Dependencies
+# ============================================================
+
+# -------------------------
+# Executor
+# -------------------------
+executor: "LocalExecutor"
+
+images:
+  airflow:
+    repository: my-airflow
+    tag: 3.1.3-v1
+    pullPolicy: IfNotPresent
+
+# -------------------------
+# DAGs (GitSync)
+# -------------------------
+dags:
+  persistence:
+    enabled: false
+
+  gitSync:
+    enabled: true
+    repo: "https://github.com/Saoudyahya/electricity-forecast-pipeline-airflow-k8s.git"
+    branch: "main"
+    subPath: "core"
+    wait: 60
+
+# -------------------------
+# PYTHONPATH
+# -------------------------
+env:
+  - name: PYTHONPATH
+    value: "/opt/airflow/dags/core:/opt/airflow/dags"
+
+# -------------------------
+# Load Secrets
+# -------------------------
+extraEnvFrom: |
+  - secretRef:
+      name: eia-api-key
+
+# -------------------------
+# Python packages (Fixed)
+# removing '==' lets Python 3.12 pick compatible versions
+# -------------------------
+extraPipPackages:
+  - "requests"
+  - "pyyaml"
+  - "python-dotenv"
+  - "pandas"
+  - "numpy"
+  - "torch"
+  - "scikit-learn"
+  - "pandera"
+  - "minio"
+
+# -------------------------
+# Disable Redis
+# -------------------------
+redis:
+  enabled: false
+
+# -------------------------
+# Disable Flower
+# -------------------------
+flower:
+  enabled: false

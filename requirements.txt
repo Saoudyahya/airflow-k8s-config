@@ -1,0 +1,16 @@
+# Core Dependencies
+requests
+pyyaml
+python-dotenv
+
+# Data Processing
+pandas
+numpy
+# Machine Learning
+torch
+scikit-learn
+
+# Data Validation
+pandera
+
+minio
