@@ -1,11 +1,10 @@
-# MinIO Configuration
 mode: standalone  # standalone or distributed
 
-# Root credentials
+# Root credentials (change these in production!)
 rootUser: minioadmin
 rootPassword: minioadmin
 
-# Persistence
+# Persistence configuration
 persistence:
   enabled: true
   storageClass: ""  # Use default storage class
@@ -17,7 +16,7 @@ service:
   type: ClusterIP
   port: 9000
   
-# Console service
+# Console service (MinIO web UI)
 consoleService:
   type: ClusterIP
   port: 9001
@@ -31,22 +30,25 @@ resources:
     memory: 1Gi
     cpu: 500m
 
-# Buckets to create on startup
+# Buckets to create automatically on startup
 buckets:
   - name: electricity-data
-    policy: none
+    policy: none  # Can be: none, download, upload, public
     purge: false
   - name: mlflow-artifacts
     policy: none
     purge: false
+  - name: kubeflow-pipelines  # NEW: For storing compiled pipeline YAMLs
+    policy: none
+    purge: false
 
-# Policies (optional)
+# Policies (optional - define custom access policies)
 policies: []
 
-# Users (optional)
+# Users (optional - create additional users beyond root)
 users: []
 
-# Enable metrics
+# Enable Prometheus metrics
 metrics:
   serviceMonitor:
     enabled: false  # Set to true if using Prometheus Operator
@@ -58,7 +60,7 @@ securityContext:
   runAsGroup: 1000
   fsGroup: 1000
 
-# Liveness probe
+# Liveness probe configuration
 livenessProbe:
   enabled: true
   initialDelaySeconds: 30
@@ -67,7 +69,7 @@ livenessProbe:
   successThreshold: 1
   failureThreshold: 3
 
-# Readiness probe
+# Readiness probe configuration
 readinessProbe:
   enabled: true
   initialDelaySeconds: 10
