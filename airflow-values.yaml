@@ -10,8 +10,8 @@ executor: "LocalExecutor"
 
 images:
   airflow:
-    repository: my-airflow
-    tag: 3.1.3-v1
+    repository: saoudyahya/airflow_end_to_end_mlops_pipeline_for_time-series_forecasting
+    tag: 3.1.3-v2
     pullPolicy: IfNotPresent
 
 # -------------------------
